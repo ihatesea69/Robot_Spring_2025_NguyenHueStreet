@@ -1,4 +1,3 @@
-import serial
 import time
 import cv2
 import random
@@ -11,7 +10,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageEnhance
 pygame.init()  # Khởi tạo Pygame để truy vấn thông tin màn hình
 info = pygame.display.Info()
 screen_width, screen_height = info.current_w, info.current_h
-print(f"Màn hình hiện tại: {screen_width} x {screen_height}")
+print(f"Current Screen : {screen_width} x {screen_height}")
 # Số lần lặp của video và audio 
 loop_max = 3
 
@@ -25,37 +24,6 @@ cv2.setWindowProperty("ALL", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 # Hiển thị nền đen
 cv2.imshow("ALL", black_bg)
 
-portname = 'COM5'
-ser = serial.Serial()
-ser.port = portname
-ser.baudrate = 256000
-ser.timeout = 3
-serial_status = False
-
-HEADER = bytes([0xfd, 0xfc, 0xfb, 0xfa])
-TERMINATOR = bytes([0x04, 0x03, 0x02, 0x01])
-NULLDATA = bytes([])
-REPORT_HEADER = bytes([0xf4, 0xf3, 0xf2, 0xf1])
-REPORT_TERMINATOR = bytes([0xf8, 0xf7, 0xf6, 0xf5])
-
-STATE_NO_TARGET = 0
-STATE_MOVING_TARGET = 1
-STATE_STATIONARY_TARGET = 2
-STATE_COMBINED_TARGET = 3
-TARGET_NAME = ["no_target", "moving_target", "stationary_target", "combined_target"]
-
-meas = {
-    "state": STATE_NO_TARGET,
-    "moving_distance": 0,
-    "moving_energy": 0,
-    "stationary_distance": 0,
-    "stationary_energy": 0,
-    "detection_distance": 0,
-}
-
-# Biến đếm toàn cục
-n = 0
-
 # Hàm chạy chữ ngang trên màn hình OpenCV
 def scroll_text():
     background = np.zeros((screen_height, screen_width, 3), dtype=np.uint8)
@@ -68,7 +36,7 @@ def scroll_text():
         # Sử dụng font TrueType hỗ trợ tiếng Việt
         font = ImageFont.truetype(font_path, 300)  # Chọn kích thước font
     except Exception as e:
-        print(f"Lỗi khi tải font: {e}")
+        print(f"Font Error: {e}")
         return
     
     # Tính toán kích thước chữ
@@ -139,7 +107,7 @@ def display_eye(video_path):
     # Khởi tạo VideoCapture
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
-        print("Không thể mở video:", video_path)
+        print("Cannot Open Camera", video_path)
         return
 
     # Lấy kích thước video gốc
@@ -183,7 +151,7 @@ def display_eye(video_path):
 
         # Thoát nếu người dùng nhấn phím 'q'
         if cv2.waitKey(1) & 0xFF == ord('q'):
-            print("Người dùng đã nhấn 'q', thoát chương trình.")
+            print("User has press 'q', exit program!")
             break
 
     # Giải phóng tài nguyên
@@ -202,7 +170,7 @@ def play_greeting_audio():
         sound.play()
         time.sleep(3)  # Thêm thời gian nghỉ giữa các âm thanh
     except Exception as e:
-        print("Lỗi khi phát âm thanh:", e)
+        print("sound error", e)
 
 
 # Hàm phát âm thanh
@@ -213,7 +181,7 @@ def play_audio(audio_path):
             sound.play()
             time.sleep(2.5)
     except Exception as e:
-        print("Lỗi khi phát âm thanh:", e)
+        print("sound error", e)
 
 def display_eye_with_audio(video_path, audio_path):
     # Phát âm thanh từ video trong một thread riêng biệt
@@ -245,7 +213,7 @@ def scroll_text():
         # Sử dụng font TrueType hỗ trợ tiếng Việt
         font = ImageFont.truetype(font_path, 300)  # Chọn kích thước font
     except Exception as e:
-        print(f"Lỗi khi tải font: {e}")
+        print(f"Font Error {e}")
         return
     
     # Tính toán kích thước chữ
@@ -328,40 +296,6 @@ roll = create_emotion_dict("resouces/roll/roll", gesture_roll)
 heart = create_emotion_dict("resouces/heart/heart", gesture_heart)
 blink = create_emotion_dict("resouces/blink/blink", gesture_blink)
 
-def detect_persion():
-
-    a = 200
-    b = 300
-    c = 100
-    
-    if (a<=meas['detection_distance']<=b or a<=meas['moving_distance']<=b ):
-        if meas['moving_energy']>a or meas['stationary_energy']==c:
-                # print(f"Phát hiện người ở kc {200}-{250}cm")
-                return True
-    else:
-        print(f"{meas['detection_distance']}, {meas['moving_distance']},{meas['moving_energy'],{meas['stationary_energy']}}")
-        return False
-
-def parse_report(data):
-    global meas
-    if len(data) < 23:
-        return
-    if data[:4] != REPORT_HEADER:
-        return
-    if data[4] != 0x0d and data[4] != 0x23:
-        return
-    if data[7] != 0xaa:
-        return
-
-    # Parse data
-    meas["state"] = data[8]
-    meas["moving_distance"] = data[9] + (data[10] << 8)
-    meas["moving_energy"] = data[11]
-    meas["stationary_distance"] = data[12] + (data[13] << 8)
-    meas["stationary_energy"] = data[14]
-    meas["detection_distance"] = data[15] + (data[16] << 8)
-    detect_persion()
-
 def detect_hello():
     mp_drawing_util = mp.solutions.drawing_utils
     mp_hand = mp.solutions.hands
@@ -387,10 +321,11 @@ def detect_hello():
 
     # Timer to limit detection to 3 seconds
     start_time = time.time()
-    detection_duration = 3  # seconds
+    detection_duration = 5  # seconds
 
     cap = cv2.VideoCapture(1)  # Use camera index 1, change to 0 if necessary
     while cap.isOpened():
+        
         current_time = time.time()
         elapsed_time = current_time - start_time
 
@@ -422,17 +357,18 @@ def detect_hello():
                     landmarks = hand.landmark
                     if landmarks[4].x > landmarks[3].x and landmarks[8].y < landmarks[6].y:
                         waving_hand = True
-
+            
             # Draw pose landmarks and check if a person is present
             if pose_results.pose_landmarks:
                 mp_drawing_util.draw_landmarks(
                     img, pose_results.pose_landmarks, mp_pose.POSE_CONNECTIONS
                 )
                 hand_detected = True
+            
 
             # Stop if waving hand detected
             if hand_detected and waving_hand:
-                print("Xin Chào Bạn")
+                print("Hello Friends")
                 return True  # Exit the loop when waving hand is detected
 
             # cv2.imshow("Camera with Overlay", img)
@@ -445,11 +381,11 @@ def detect_hello():
     cap.release()
     # cv2.destroyAllWindows()
 
-def emotion():
+def one_emotion(): #Hàm này để chạy show 1 con đảo qua đảo lại
     # Khởi tạo pygame mixer
     init_pygame_mixer()
 
-    emotions = [happy, roll, heart, blink]
+    emotions = [blink]
 
     selected_emotion = random.choice(emotions)
     print(selected_emotion)
@@ -457,34 +393,46 @@ def emotion():
     # Chạy video và âm thanh
     display_eye_with_audio(selected_emotion["eye"] + ".mp4", selected_emotion["eye"] + ".MP3")
 
-def continuous_read():
+def emotion(): #Hàm này để chạy show nhiều emotion
+    # Khởi tạo pygame mixer
+    init_pygame_mixer()
+
+    emotions = [happy, roll, heart]
+
+    selected_emotion = random.choice(emotions)
+    print(selected_emotion)
+    
+    # Chạy video và âm thanh
+    display_eye_with_audio(selected_emotion["eye"] + ".mp4", selected_emotion["eye"] + ".MP3")
+def XoayCo(): #Hàm này giả lập việc xoay cổ
+    while True:
+        print("Xoay Co")
+        time.sleep(10)  # Đợi 10 giây
+def DoTayChao(): #Hàm này giả lập việc Dơ tay chào
+    print("Do tay chao")
+    
+def continuous_read(): #Hàm main
     global n  # Khai báo biến toàn cục
     n = 0  # Khởi tạo biến đếm
+    #Sau 5 phút sau cổ
+    hello_thread = threading.Thread(target=XoayCo, daemon=True)
+    hello_thread.start()
     try:
-        # time.sleep(3)
+        #time.sleep(3)
         while True:
-            if (detect_hello()):
+            if (detect_hello()): #Nếu nhận diện người thì show các cảm xúc khác nhưng không có đảo mắt
+                DoTayChao()
                 emotion()
-            ser.open()
-            response = ser.read_until(REPORT_TERMINATOR)
-            if len(response) not in [23, 45]:
-                continue
-
-            parse_report(response)
+            else: #Random chỉ mỗi cảm xúc đảo mắt + show chữ
+                random.choice([one_emotion, scroll_text])()
+           
             
-            isTrue = detect_persion()
-            ser.close()
-            if isTrue:
-                emotion()
-                # time.sleep(1)
-            else:
-                scroll_text()
 
             time.sleep(1)  # Optional delay for readability
     except KeyboardInterrupt:
         print("\nStopped by user.")
     finally:
-        ser.close()
+        #ser.close()
         exit(0)
 
 if __name__ == '__main__':
