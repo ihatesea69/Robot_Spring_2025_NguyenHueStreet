@@ -6,6 +6,10 @@ import threading
 import numpy as np
 import mediapipe as mp 
 from PIL import Image, ImageDraw, ImageFont, ImageEnhance
+import os
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent
 
 pygame.init()  # Khởi tạo Pygame để truy vấn thông tin màn hình
 info = pygame.display.Info()
@@ -30,7 +34,8 @@ def scroll_text():
 
     textArr = ["HAPPY NEW YEAR", "CUNG CHÚC TÂN XUÂN", "CHÚC MỪNG NĂM MỚI", "XUÂN ẤT TỴ 2025"]
     text = random.choice(textArr)
-    font_path = "./resouces/AmericanTypewriter.ttc"  # Đường dẫn đến font hỗ trợ tiếng Việt
+    #font_path = "./resouces/AmericanTypewriter.ttc"  # Đường dẫn đến font hỗ trợ tiếng Việt #Tri
+    font_path = BASE_DIR / "resources/AmericanTypewriter.ttc"
     
     try:
         # Sử dụng font TrueType hỗ trợ tiếng Việt
@@ -163,7 +168,8 @@ def display_eye(video_path):
 def play_greeting_audio(): 
     greeting_sounds = ['EN', 'CHINA', 'FR', 'JP', 'KR', 'RUS']
     selected_sound = random.choice(greeting_sounds)  # Chọn ngẫu nhiên một âm thanh
-    audio_path = 'resouces/sound_greeting/HPNewYear_' + selected_sound + '.mp3'
+    #audio_path = 'resouces/sound_greeting/HPNewYear_' + selected_sound + '.mp3' #Trí
+    audio_path = BASE_DIR / f"resources/sound_greeting/HPNewYear_{selected_sound}.mp3"
 
     try:
         sound = pygame.mixer.Sound(audio_path)
@@ -207,7 +213,8 @@ def scroll_text():
 
     textArr = ["HAPPY NEW YEAR", "CUNG CHÚC TÂN XUÂN", "CHÚC MỪNG NĂM MỚI", "XUÂN ẤT TỴ 2025"]
     text = random.choice(textArr)
-    font_path = "./resouces/AmericanTypewriter.ttc"  # Đường dẫn đến font hỗ trợ tiếng Việt
+    #font_path = "./resouces/AmericanTypewriter.ttc"  # Đường dẫn đến font hỗ trợ tiếng Việt #Trí
+    font_path = BASE_DIR / "resources/AmericanTypewriter.ttc"
     
     try:
         # Sử dụng font TrueType hỗ trợ tiếng Việt
@@ -291,10 +298,10 @@ def create_emotion_dict(eye, gesture):
         "gesture": gesture
     }
 
-happy = create_emotion_dict("resouces/happy/happy", gesture_happy)
-roll = create_emotion_dict("resouces/roll/roll", gesture_roll)
-heart = create_emotion_dict("resouces/heart/heart", gesture_heart)
-blink = create_emotion_dict("resouces/blink/blink", gesture_blink)
+happy = create_emotion_dict(BASE_DIR / "resources/happy/happy", gesture_happy)
+roll = create_emotion_dict(BASE_DIR / "resources/roll/roll", gesture_roll)
+heart = create_emotion_dict(BASE_DIR / "resources/heart/heart", gesture_heart)
+blink = create_emotion_dict(BASE_DIR / "resources/blink/blink", gesture_blink)
 
 def detect_hello():
     mp_drawing_util = mp.solutions.drawing_utils
