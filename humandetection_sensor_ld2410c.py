@@ -1,83 +1,104 @@
-import serial
 import time
-portname = 'COM5'
-ser = serial.Serial()
-ser.port = portname
-ser.baudrate = 256000
-ser.timeout = 3
-serial_status = False
+from LD2410 import LD2410
+import logging
 
-HEADER = bytes([0xfd, 0xfc, 0xfb, 0xfa])
-TERMINATOR = bytes([0x04, 0x03, 0x02, 0x01])
-NULLDATA = bytes([])
-REPORT_HEADER = bytes([0xf4, 0xf3, 0xf2, 0xf1])
-REPORT_TERMINATOR = bytes([0xf8, 0xf7, 0xf6, 0xf5])
+# Turn off logging debug for ld2410
+logging.getLogger("LD2410").setLevel(logging.CRITICAL)
 
-STATE_NO_TARGET = 0
-STATE_MOVING_TARGET = 1
-STATE_STATIONARY_TARGET = 2
-STATE_COMBINED_TARGET = 3
-TARGET_NAME = ["no_target", "moving_target", "stationary_target", "combined_target"]
+#SETUP
+portname = "COM5"  # PORT TO CONNECT WITH SENSOR, "COM5" for laptop, "/dev/ttys0" for raspberry
+sensor = LD2410(port=portname,baud_rate="0700",timeout=3)
+logging.getLogger("logging").setLevel(logging.WARNING)
 
-meas = {
-    "state": STATE_NO_TARGET,
-    "moving_distance": 0,
-    "moving_energy": 0,
-    "stationary_distance": 0,
-    "stationary_energy": 0,
-    "detection_distance": 0,
-}
-
-# Biến đếm toàn cục
 n = 0
-
-"""
-def detect_persion():
-
-    a = 200
-    b = 300
-    c = 100
-    
-    if (a<=meas['detection_distance']<=b or a<=meas['moving_distance']<=b ):
-        if meas['moving_energy']>a or meas['stationary_energy']==c:
-                # print(f"Phát hiện người ở kc {200}-{250}cm")
-                return True
+a=350 # MIN DISTANT (cm)
+b=450   # MAX DISTANT (cm)
+thread1= 80 #THREAD1 FOR STATION AND MOVING ENERGY DETECTED
+thread2= 100 #THREAD2 FOR STATION AND MOVING ENERGY DETECTED
+def print_meas(state,distant,en_station_fromgate):
+    global n,a,b, thread1, thread2
+    #mgate4,mgate5,mgate6= en_moving_fromgate
+    sgate3,sgate4,sgate5,sgate6= en_station_fromgate
+# station, moving_dist, moving_energy, stationary_dist, stationary_energy, detection_dist= data
+    if(state!=0):
+        #DISTANT CHECKING
+        print(f"-" * 30)
+        if (a<=distant<=b):
+            print(f"DETECTED...|__{distant}__|")
+        # CONDITION
+        if (thread1 <= sgate6 <=thread2 and thread1<=sgate5<=thread2):
+            n += 1
+            print(f"{n} time of human detection in the range of 4.5m")
+            return True
+        elif (thread1 <= sgate5 <=thread2 and thread1<=sgate4<=thread2):
+            n += 1
+            print(f"{n} time of human detection in the range of 4.5m")
+            return True
+        elif (thread1 <= sgate4 <=thread2 and thread1<=sgate3<=thread2):
+            n += 1
+            print(f"{n} time of human detection in the range of 4.5m")
+            return True
+        # elif (thread1<= mgate6 <=thread2 or thread1<=mgate5<=thread2):
+        #     n += 1
+        #     print(f"{n} time of moving detection in the range of 4.5m")
+        #     return True
+        # elif (thread1<= mgate5 <=thread2 or thread1<=mgate4<=thread2):
+        #     n += 1
+        #     print(f"{n} time of moving detection in the range of 3.75m")
+        #     return True
+        else:
+            print(f"---------STATION:|{sgate4}|{sgate5}|{sgate6}|-------")
+            #print(f"MOVEMENT:|{mgate4}|{mgate5}|{mgate6}|-------STATION:|{sgate4}|{sgate5}|{sgate6}|")
+            return False
+    #NOT IN DETECTION AREA   
     else:
-        print(f"{meas['detection_distance']}, {meas['moving_distance']},{meas['moving_energy'],{meas['stationary_energy']}}")
+        print(f"NO DETECTION!!!, MOVE CLOSE TO DETECTED AREA {a}-{b}")
+        print(f"|__{distant}__|")
         return False
+    
+    
+        
+def sensor_read():
+    global n
+    n = 0  
+    sensor.enable_engineering_mode()
+    try:
+        #time.sleep(3)
+        sensor.start()  # Connect to sensor
+        while True:
+            #Collect data from sensor
+            data,_,en_station_fromgate =sensor.get_radar_data()
+            #en_moving_fromgate=en_moving_fromgate[4:7]
+            en_station_fromgate=en_station_fromgate[3:7]
+            state=data[0]
+            distant=data[5]
+            if data is None or len(data)<6:
+                print("invalid data")
+                continue  
+            # if not en_moving_fromgate:
+            #     print("invalid moving en ")
+            #     continue
+            if en_station_fromgate is None:
+                print("invalid station en ")
+                continue   
+            result=print_meas(state,distant,en_station_fromgate)
+            if result and n ==5:
+                print("Detection complete")
+                n=0
+                break
+            #delay to educe data processing load
+            time.sleep(0.1)
 
-def parse_report(data):
-    global meas
-    if len(data) < 23:
-        return
-    if data[:4] != REPORT_HEADER:
-        return
-    if data[4] != 0x0d and data[4] != 0x23:
-        return
-    if data[7] != 0xaa:
-        return
+    except KeyboardInterrupt:
+        print("\nStop by user")
+    finally:
+            sensor.disable_engineering_mode()
+            sensor.stop()
+            print(f"Closed!!! {portname}.")
 
-    # Parse data
-    meas["state"] = data[8]
-    meas["moving_distance"] = data[9] + (data[10] << 8)
-    meas["moving_energy"] = data[11]
-    meas["stationary_distance"] = data[12] + (data[13] << 8)
-    meas["stationary_energy"] = data[14]
-    meas["detection_distance"] = data[15] + (data[16] << 8)
-    detect_persion()
-"""
-"""
-            ser.open()
-            response = ser.read_until(REPORT_TERMINATOR)
-            if len(response) not in [23, 45]:
-                continue
+    return True
 
-            parse_report(response)
-            
-            
-            isTrue = detect_persion()
-            ser.close()
-            
-            if isTrue:
-                emotion()
-"""
+
+if __name__ == "__main__":
+    sensor_read()
+    

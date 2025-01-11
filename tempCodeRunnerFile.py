@@ -1,1 +1,0 @@
-ygame.mixer.init()  # Khởi động pygame mixer
