@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from utils.screen import init_screen
 from modules.camera import CameraDetector
 from modules.audio import AudioManager
