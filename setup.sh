@@ -25,6 +25,15 @@ sudo apt-get install -y \
     libavformat58 \
     libswscale5
 
+# Add audio dependencies
+sudo apt-get install -y \
+    libasound2-dev \
+    libpulse-dev \
+    libsdl2-2.0-0 \
+    libsdl2-mixer-2.0-0 \
+    libsdl2-dev \
+    libsdl2-mixer-dev
+
 # Install Python dependencies
 pip3 install -r requirements.txt
 
