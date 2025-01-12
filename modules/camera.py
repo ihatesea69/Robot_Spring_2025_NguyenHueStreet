@@ -2,11 +2,14 @@ import cv2
 import threading
 import mediapipe as mp
 import time
+from utils.logger import Logger
 
 class CameraDetector:
     def __init__(self):
         self.detection_result = {"human_detected_by_cam": False, "waving_hand": False}
         self.detection_lock = threading.Lock()
+        self.logger = Logger()
+        self.logger.info("Camera detector initialized")
         
     def start_detection(self):
         self.camera_thread = threading.Thread(target=self._camera_detection_thread, daemon=True)

@@ -2,13 +2,27 @@ from LD2410 import LD2410
 import logging
 import time
 import threading
+from utils.logger import Logger
 
 class SensorDetector:
     def __init__(self, port="COM5"):
         self.portname = port
         self.detection_result = {"human_detected_by_sensor": False}
         self.detection_lock = threading.Lock()
-        self.sensor = LD2410(port=self.portname, baud_rate="0700", timeout=3)
+        self.logger = Logger()
+        
+        # Disable all logging from LD2410 and other loggers
+        logging.getLogger("LD2410").setLevel(logging.CRITICAL)
+        logging.getLogger().setLevel(logging.CRITICAL)  # Root logger
+        logging.getLogger("logging").setLevel(logging.CRITICAL)
+        
+        # Only log our application messages
+        self.logger.info(f"Initializing sensor on port {port}")
+        
+        try:
+            self.sensor = LD2410(port=self.portname, baud_rate="0700", timeout=3)
+        except Exception as e:
+            self.logger.error(f"Failed to initialize sensor: {e}")
         
         # Configure sensor parameters
         self.n = 0
@@ -16,10 +30,6 @@ class SensorDetector:
         self.b = 450  # MAX DISTANT (cm)
         self.thread1 = 80  # THREAD1 FOR STATION AND MOVING ENERGY DETECTED
         self.thread2 = 100  # THREAD2 FOR STATION AND MOVING ENERGY DETECTED
-        
-        # Turn off logging debug
-        logging.getLogger("LD2410").setLevel(logging.CRITICAL)
-        logging.getLogger("logging").setLevel(logging.WARNING)
 
     def start_detection(self):
         self.sensor_thread = threading.Thread(target=self._sensor_detection_thread, daemon=True)

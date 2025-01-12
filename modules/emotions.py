@@ -1,10 +1,13 @@
 import random
+from utils.logger import Logger
 
 class EmotionManager:
     def __init__(self, audio_manager, display_manager):
         self.audio_manager = audio_manager
         self.display_manager = display_manager
         self.emotions = self._create_emotions()
+        self.logger = Logger()
+        self.logger.info("Emotion manager initialized")
         
     def _create_emotions(self):
         return {
@@ -18,6 +21,7 @@ class EmotionManager:
         emotions = ['blink', 'roll']
         selected = random.choice(emotions)
         emotion = self.emotions[selected]
+        self.logger.info(f"Playing one emotion: {selected}")
         
         self.display_manager.display_eye_with_audio_no_greeting(
             f"{emotion['eye']}.mp4",
@@ -28,6 +32,7 @@ class EmotionManager:
         emotions = ['happy', 'heart']
         selected = random.choice(emotions)
         emotion = self.emotions[selected]
+        self.logger.info(f"Showing emotion: {selected}")
         
         self.display_manager.display_eye_with_audio(
             f"{emotion['eye']}.mp4",
